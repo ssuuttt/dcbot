@@ -14,19 +14,20 @@ cd dcbot
 docker build -t dcbot-bot .
 ```
 
-# Creating bot with token
+# Creating Token
+###  Creating discord token for bot
 
-Follow the guide at: https://discordpy.readthedocs.io/en/stable/discord.html
+https://discordpy.readthedocs.io/en/stable/discord.html
 
-# Creating OpenAI API token
+### Creating OpenAI API token
 
 https://platform.openai.com/account/api-keys
 
 # Make environment variable
 
 The content of .env file look like:
-```
-
+```bash
+$cat .env
 DISCORD_BOT_TOKEN="MTA5OTk......"
 OPENAPI_API_KEY="sk-a1......."
 
