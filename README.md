@@ -68,15 +68,14 @@ INFO:root:Bot is ready as milito#2064
 
 ```
 
-Now try to send `https://blog.ret2.io/2024/07/17/pwn2own-auto-2024-charx-bugs/` to the `llm` channel
+# Usage:
+1. Send link to #llm channel to get summary
+2. Click on `technical step` button
 
-It should look like:
-![summary](pics/sum.png)
-
-
-And when click on `technical step` button:
-
-![steps](pics/steps.png)
+# Support links
+* Normal curl-ab link
+* Youtube
+* PDF
 
 
 
