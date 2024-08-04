@@ -31,10 +31,14 @@ command_data = {
 
 
     
-async def discuss(message, url,bot=None):
+async def discuss(message, url, thread_id , bot=None):
     query = message.content
     text = get_content_url(url,stored=True)
     answer,all_answer = await blog_retrieve(query,text,bot=bot)
+
+    if "step-by-step breakdown" in query:
+            update_breakdown_content(thread_id,answer)
+
     await send_long_message(message.channel,answer)
     await message.channel.send(view=blog_view(answer))
 
@@ -79,7 +83,9 @@ async def execute(message,bot,debug=False):
     
 
         
-        insert_thread_to_db(thread.id,1,url,message)
+        insert_thread_to_db(thread.id,1,url,message, answer)
+
+
         await send_long_message(thread, answer)
         await thread.send(view=blog_view(answer))
     else:

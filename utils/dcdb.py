@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 
 def creat_db():
@@ -14,10 +15,12 @@ def creat_db():
             user_id INTEGER,
             channel_id INTEGER,
             message_id INTEGER,
-            content TEXT
+            summary TEXT,
+            breakdown TEXT
         )
     ''')
     conn.commit()
+
 
 
 
@@ -40,20 +43,22 @@ def select_and_clear_content():
 
 
 
-def insert_thread_to_db(thread_id,thread_type, thread_name, message, content="", debug=False):
+def insert_thread_to_db(thread_id,thread_type, thread_name, message, summary="", debug=False):
     conn = sqlite3.connect('db/threads.db')
     c = conn.cursor()
-    c.execute("INSERT INTO threads(thread_id, thread_type, thread_name,user_id, channel_id, message_id, content) VALUES (?, ?, ?, ?,?,?,?)",
-                (thread_id, thread_type, thread_name, message.author.id, message.channel.id, message.id, content))
+    c.execute("INSERT INTO threads(thread_id, thread_type, thread_name,user_id, channel_id, message_id, summary, breakdown) VALUES (?, ?, ?, ?,?,?,?,?)",
+                (thread_id, thread_type, thread_name, message.author.id, message.channel.id, message.id, summary, ""))
     if debug:
-        print(f"insert_thread_to_db {thread_id} {thread_type} {thread_name} {message.author.id} {message.channel.id} {message.id} {content}")
+        print(f"insert_thread_to_db {thread_id} {thread_type} {thread_name} {message.author.id} {message.channel.id} {message.id} {summary}")
     conn.commit()
 
 
-def update_content(thread_id, content, debug=False):
+def update_breakdown_content(thread_id, breakdown, debug=False):
     conn = sqlite3.connect('db/threads.db')
+    if debug:
+        print(f"update_breakdown_content {thread_id} {breakdown}")
     c = conn.cursor()
-    c.execute("UPDATE threads SET content=? WHERE thread_id=?", (thread_id, content))
+    c.execute("UPDATE threads SET breakdown=? WHERE thread_id=?", (breakdown, thread_id))
     conn.commit()
 
 def check_thread_in_db(channel_id, debug=False):
@@ -73,3 +78,31 @@ def add_thread_to_db(message):
     c = conn.cursor()
     c.execute("UPDATE threads SET message_id=? WHERE thread_id=?", (message.id, message.channel.id))
     conn.commit()
+
+
+def export_db_to_json():
+    # Connect to the SQLite database
+    conn = sqlite3.connect('db/threads.db')
+    c = conn.cursor()
+
+    # Query the database
+    c.execute("SELECT thread_name, summary, breakdown FROM threads WHERE thread_type = 1")
+    rows = c.fetchall()
+
+    # Prepare the data
+    data = []
+    for row in rows:
+        data.append({
+            "url": row[0],
+            "summary": row[1],
+            "breakdown": row[2]
+        })
+
+    # Write to JSON file
+    with open('web/blog_data.json', 'w') as f:
+        json.dump(data, f, indent=2)
+
+    print("Data exported to blog_data.json")
+
+    # Close the connection
+    conn.close()

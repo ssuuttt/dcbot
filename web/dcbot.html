@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Blog Data Display</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --card-bg-color: #2a2a2a;
+            --card-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
+            --border-color: #444444;
+            --accent-color: #5dade2;
+            --breakdown-bg: #222222;
+            --link-hover-bg: #333333;
+        }
+
+        :root.light-theme {
+            --bg-color: #f4f4f4;
+            --text-color: #333333;
+            --card-bg-color: #ffffff;
+            --card-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            --border-color: #e0e0e0;
+            --accent-color: #3498db;
+            --breakdown-bg: #f8f8f8;
+            --link-hover-bg: #e8e8e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #linkList {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: var(--card-bg-color);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            transition: width 0.3s ease;
+            z-index: 1000;
+        }
+
+        #linkList.expanded {
+            width: 600px;
+        }
+
+        #linkList h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+
+        .blog-link {
+            display: block;
+            padding: 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .blog-link:hover,
+        .blog-link.active {
+            background-color: var(--link-hover-bg);
+        }
+
+        #linkList.expanded .blog-link {
+            white-space: normal;
+            overflow: visible;
+        }
+
+        #contentDisplay {
+            margin-left: 220px;
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .blog-content {
+            background-color: var(--card-bg-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+        }
+
+        h3 {
+            color: var(--accent-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-item {
+            background-color: var(--breakdown-bg);
+            border-left: 3px solid var(--accent-color);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .hashtags {
+            margin-top: 15px;
+        }
+
+        .hashtag {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        #themeSwitch {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            padding: 5px 10px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .hashtag {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .hashtag:hover {
+            background-color: var(--link-hover-bg);
+        }
+
+        .hashtag.active {
+            background-color: #e74c3c;
+        }
+
+        .blog-link.highlight {
+            border-left: 3px solid var(--accent-color);
+            padding-left: 7px;
+        }
+
+        #activeFilters {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+    <button id="themeSwitch">Switch Theme</button>
+    <div id="linkList">
+        <h2>Blog Links</h2>
+        <div id="activeFilters"></div>
+        <!-- Links will be dynamically inserted here -->
+    </div>
+    <div id="contentDisplay">
+        <!-- Blog content will be displayed here -->
+    </div>
+
+    <script>
+        let blogData = [];
+        let activeHashtags = new Set();
+
+        function nl2br(str) {
+            return str.replace(/\\n/g, '<br>');
+        }
+
+        function formatBreakdown(breakdown) {
+            const lines = breakdown.split('\n');
+            return lines.map((line, index) => {
+                if (line.trim().match(/^\d+\./)) {
+                    return `<div class="breakdown-item">${line}</div>`;
+                }
+                return line;
+            }).join('\n');
+        }
+
+        function extractHashtags(summary) {
+            const hashtagRegex = /#\w+/g;
+            const hashtags = summary.match(hashtagRegex) || [];
+            return hashtags.map(tag => `<span class="hashtag" data-tag="${tag}">${tag}</span>`).join(' ');
+        }
+
+        function displayBlogContent(blog) {
+            const contentDisplay = document.getElementById('contentDisplay');
+            const hashtags = extractHashtags(blog.summary);
+            contentDisplay.innerHTML = `
+                <div class="blog-content">
+                    <h3>Summary</h3>
+                    <p>${nl2br(blog.summary)}</p>
+                    <div class="hashtags">${hashtags}</div>
+                    <h3>Breakdown</h3>
+                    <p>${formatBreakdown(nl2br(blog.breakdown))}</p>
+                </div>
+            `;
+            // Add click event listeners to hashtags
+            contentDisplay.querySelectorAll('.hashtag').forEach(tag => {
+                tag.addEventListener('click', () => toggleHashtag(tag.dataset.tag));
+            });
+        }
+
+
+        function updateUrlHighlights() {
+            const linkList = document.getElementById('linkList');
+            linkList.querySelectorAll('.blog-link').forEach((link, index) => {
+                const blog = blogData[index];
+                const blogHashtags = new Set(blog.summary.match(/#\w+/g) || []);
+                const shouldHighlight = activeHashtags.size === 0 ||
+                    [...activeHashtags].some(tag => blogHashtags.has(tag));
+                link.classList.toggle('highlight', shouldHighlight);
+            });
+        }
+
+        function updateActiveFilters() {
+            const activeFilters = document.getElementById('activeFilters');
+            if (activeHashtags.size > 0) {
+                const filterTags = [...activeHashtags].map(tag =>
+                    `<span class="active-filter" data-tag="${tag}">${tag} &#x2715;</span>`
+                ).join(' ');
+                activeFilters.innerHTML = `Active filters: ${filterTags}`;
+
+                // Add click event listeners to the active filter tags
+                activeFilters.querySelectorAll('.active-filter').forEach(filterTag => {
+                    filterTag.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        const tagToRemove = filterTag.dataset.tag;
+                        toggleHashtag(tagToRemove);
+                    });
+                });
+            } else {
+                activeFilters.innerHTML = '';
+            }
+        }
+
+        function toggleHashtag(tag) {
+            if (activeHashtags.has(tag)) {
+                activeHashtags.delete(tag);
+            } else {
+                activeHashtags.add(tag);
+            }
+            updateUrlHighlights();
+            updateActiveFilters();
+
+            // Update the active state of hashtags in the content display
+            document.querySelectorAll(`.hashtag[data-tag="${tag}"]`).forEach(hashtag => {
+                hashtag.classList.toggle('active', activeHashtags.has(tag));
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const linkList = document.getElementById('linkList');
+            const themeSwitch = document.getElementById('themeSwitch');
+
+            themeSwitch.addEventListener('click', function () {
+                document.documentElement.classList.toggle('light-theme');
+            });
+
+            linkList.addEventListener('mouseenter', function () {
+                this.classList.add('expanded');
+            });
+
+            linkList.addEventListener('mouseleave', function () {
+                this.classList.remove('expanded');
+            });
+
+            fetch('blog_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    blogData = data;
+                    data.forEach((blog, index) => {
+                        const link = document.createElement('div');
+                        link.className = 'blog-link';
+                        link.textContent = blog.url;
+                        link.title = blog.url; // Add title for tooltip on hover
+                        link.addEventListener('click', function () {
+                            document.querySelectorAll('.blog-link').forEach(l => l.classList.remove('active'));
+                            this.classList.add('active');
+                            displayBlogContent(blog);
+                            linkList.classList.remove('expanded');
+                        });
+                        linkList.appendChild(link);
+
+                        if (index === 0) {
+                            link.click(); // Display the first blog by default
+                        }
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+
+</html>

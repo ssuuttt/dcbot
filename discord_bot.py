@@ -102,12 +102,18 @@ async def on_message(message):
     if message.content.startswith("."):
         ignore = False
         message.content = message.content[1:]
-        logging.info(f"Bot asking: {message.content}")
+        logging.info(f"User ask: {message.content}")
 
 
     if message.content.startswith("bt"):
         await message.channel.send(view=blog_view())
         return
+    
+    if message.content.startswith("www"):
+        export_db_to_json()
+        await message.channel.send("Exporting to JSON Done")
+        return
+
 
     if message.author.bot and ignore:
         return
@@ -125,11 +131,10 @@ async def on_message(message):
         thread_info = check_thread_in_db(message.channel.id, debug=True)
 
         if thread_info:
-            thread_type, thread_name, user_id, channel_id, message_id, content = thread_info[1:]
-
+            thread_id, thread_type, thread_name, user_id, channel_id, message_id, summary, breakdown = thread_info
             # Send a response to the thread
             if thread_type == 1:
-                await command_functions["blog_discuss"](message, thread_name, bot)
+                await command_functions["blog_discuss"](message, thread_name, thread_id , bot)
             if thread_type == 5:
                 logging.info("Just a Ping thread")
             
