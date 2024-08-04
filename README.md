@@ -71,7 +71,7 @@ INFO:root:Bot is ready as milito#2064
 # Usage:
 1. Send link to #llm channel to get summary
 2. Click on `technical step` button
-3. Visit `https://ssuuttt.github.io/` for generated web content.
+3. Visit https://ssuuttt.github.io/ for generated web content.
 # Support links
 * Normal curl-able link
 * Youtube
