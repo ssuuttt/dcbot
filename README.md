@@ -71,12 +71,13 @@ INFO:root:Bot is ready as milito#2064
 # Usage:
 1. Send link to #llm channel to get summary
 2. Click on `technical step` button
-
+3. Web version:
+   * Send `www` to #llm channel to export blog_data.json to web folder and browsing locally.
+   * Visit https://ssuuttt.github.io/ for generated web content ( dcbot.html )
 # Support links
-* Normal curl-ab link
+* Normal curl-able link
 * Youtube
 * PDF
-
 
 
 
