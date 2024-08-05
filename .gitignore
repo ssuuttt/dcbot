@@ -1,4 +1,5 @@
 .env
+prompt.txt
 *.pyc
 pdfs/
 blogs/

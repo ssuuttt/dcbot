@@ -16,11 +16,20 @@ def creat_db():
             channel_id INTEGER,
             message_id INTEGER,
             summary TEXT,
-            breakdown TEXT
+            breakdown TEXT,
+            hashtags TEXT
         )
     ''')
-    conn.commit()
 
+    # Create the hashtags table if it doesn't exist
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS hashtags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hashtag TEXT UNIQUE
+        )
+    ''')
+
+    conn.commit()
 
 
 
@@ -43,14 +52,30 @@ def select_and_clear_content():
 
 
 
-def insert_thread_to_db(thread_id,thread_type, thread_name, message, summary="", debug=False):
+def insert_thread_to_db(thread_id, thread_type, thread_name, message, summary="", hashtags="", debug=False):
     conn = sqlite3.connect('db/threads.db')
     c = conn.cursor()
-    c.execute("INSERT INTO threads(thread_id, thread_type, thread_name,user_id, channel_id, message_id, summary, breakdown) VALUES (?, ?, ?, ?,?,?,?,?)",
-                (thread_id, thread_type, thread_name, message.author.id, message.channel.id, message.id, summary, ""))
+    c.execute("INSERT INTO threads(thread_id, thread_type, thread_name, user_id, channel_id, message_id, summary, breakdown, hashtags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              (thread_id, thread_type, thread_name, message.author.id, message.channel.id, message.id, summary, "", hashtags))
     if debug:
-        print(f"insert_thread_to_db {thread_id} {thread_type} {thread_name} {message.author.id} {message.channel.id} {message.id} {summary}")
+        print(f"insert_thread_to_db {thread_id} {thread_type} {thread_name} {message.author.id} {message.channel.id} {message.id} {summary} {hashtags}")
     conn.commit()
+
+def get_all_hashtags():
+    conn = sqlite3.connect('db/threads.db')
+    c = conn.cursor()
+    c.execute("SELECT hashtag FROM hashtags")
+    hashtags = [row[0] for row in c.fetchall()]
+    conn.close()
+    return hashtags
+
+def add_new_hashtags(new_hashtags):
+    conn = sqlite3.connect('db/threads.db')
+    c = conn.cursor()
+    for hashtag in new_hashtags:
+        c.execute("INSERT OR IGNORE INTO hashtags (hashtag) VALUES (?)", (hashtag,))
+    conn.commit()
+    conn.close()
 
 
 def update_breakdown_content(thread_id, breakdown, debug=False):

@@ -73,17 +73,36 @@ async def execute(message,bot,debug=False):
         thread = await message.create_thread(name=url[:60])
         if query == "full":
             answer = text
-        else :
+        else:
             if len(query.strip()) == 0:
-                query = "Summary the content and  after summarizing, please also suggest appropriate hashtags (less than 10) that would help in categorizing and highlighting the key topics discussed in the blog. I've already thought of a few hashtags like #lpe, #rce, #android, #chrome, #windows, #linux, #firefox , #ios, #exploit, #sandboxescape. Feel free to include these and any other similar ones."
-            answer,all_answer = await blog_retrieve(query,text,bot=bot)
+                existing_hashtags = get_all_hashtags()
+                hashtag_list = ", ".join(existing_hashtags)
+                query = f"""Summarize the content and suggest appropriate hashtags (less than 10) that would help in categorizing and highlighting the key topics discussed in the blog. 
+                Here's a list of existing hashtags: {hashtag_list}. 
+                Please use these existing hashtags where appropriate, and feel free to suggest new ones if needed. 
+                Format the hashtags as a comma-separated list at the end of your summary, like this: 
+                [Summary text]
+                Hashtags: #tag1, #tag2, #tag3"""
+            
+            answer, all_answer = await blog_retrieve(query, text, bot=bot)
     
     
         print(url + " " + query)
     
 
         
-        insert_thread_to_db(thread.id,1,url,message, answer)
+
+        # Extract hashtags from the answer
+        hashtags = []
+        if "Hashtags:" in answer:
+            hashtag_section = answer.split("Hashtags:")[-1].strip()
+            hashtags = [tag.strip() for tag in hashtag_section.split(",")]
+
+        # Add new hashtags to the database
+        add_new_hashtags(hashtags)
+
+        # Insert thread with hashtags
+        insert_thread_to_db(thread.id, 1, url, message, answer, ",".join(hashtags))
 
 
         await send_long_message(thread, answer)
